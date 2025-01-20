@@ -1,0 +1,18 @@
+{
+    "root": true,
+    "env": {
+        "browser": true,
+        "node": true
+    },
+    "parser": "@typescript-eslint/parser",
+    "plugins": ["@typescript-eslint"],
+    "rules": {
+        "@typescript-eslint/no-use-before-define": "warn",
+        "no-undef": "warn",
+        "no-await-in-loop": "error",
+        "for-direction": "error",
+        "no-duplicate-imports": "error",
+        "no-this-before-super": "warn",
+        "no-unreachable": "warn"
+    }
+}

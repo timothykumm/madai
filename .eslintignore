@@ -1,0 +1,4 @@
+# Prettier also uses this config
+# Ignore artifacts:
+build
+coverage
