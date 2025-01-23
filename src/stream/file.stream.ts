@@ -1,6 +1,6 @@
 import { Readable } from 'stream';
 import { FileService } from '../service/file.service';
-import { CodePrecheck } from '../other/interfaces';
+import { CodePrecheck, FileStreamResponse } from '../other/interfaces';
 
 export class FileStream extends Readable {
     private fileService: FileService;
@@ -11,11 +11,6 @@ export class FileStream extends Readable {
         super();
         this.fileService = new FileService();
         this.codePrecheck = codePrecheck;
-
-        console.log(
-            `Anzahl der zu überprüfenden Datein: ${codePrecheck.fileCount}\nAnzahl der zu überprüfenden Zeilen Code: ${codePrecheck.codeLineCount}\n`
-        );
-        console.log(codePrecheck.filePaths);
     }
 
     async _read() {
@@ -24,14 +19,16 @@ export class FileStream extends Readable {
             return;
         }
 
-        this.push(
-            Buffer.from(
-                JSON.stringify({
-                    text: `${await this.fileService.readFile(this.codePrecheck.filePaths[this.currentFileIndex])}`,
-                    lastText: this.currentFileIndex + 1 === this.codePrecheck.fileCount,
-                })
-            )
-        );
+        const fileStreamResponse: FileStreamResponse = {
+            path: this.codePrecheck.filePaths[this.currentFileIndex],
+            text: `${await this.fileService.readFile(this.codePrecheck.filePaths[this.currentFileIndex])}`,
+            isLastText: this.currentFileIndex + 1 === this.codePrecheck.fileCount,
+        };
+
+        const output = JSON.stringify(fileStreamResponse);
+        const outputBuffer = Buffer.from(output);
+
+        this.push(outputBuffer);
 
         this.currentFileIndex++;
     }

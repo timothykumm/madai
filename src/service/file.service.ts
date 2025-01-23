@@ -1,8 +1,8 @@
 import unzipper from 'unzipper';
-import { promises as fsPromises, createReadStream, rm, rmSync } from 'fs';
+import { promises as fsPromises, createReadStream } from 'fs';
 import path from 'path';
 import { pipeline } from 'stream/promises';
-import { CodePrecheck } from '../other/interfaces';
+import { CodePrecheck, MADLog } from '../other/interfaces';
 
 export class FileService {
     private maxSize = 10 * 1024 * 1024; // 10 MB
@@ -33,7 +33,7 @@ export class FileService {
         }
     };
 
-    async directoryPathPrecheck(directoryPath: string): Promise<CodePrecheck> {
+    directoryPathPrecheck = async (directoryPath: string): Promise<CodePrecheck> => {
         let fileCount = 0;
         let codeLineCount = 0;
         const filePaths: string[] = [];
@@ -46,17 +46,16 @@ export class FileService {
 
                 if (file.isDirectory()) {
                     // Rekursiver Aufruf für Unterverzeichnisse
-                    const subDirStats = await this.directoryPathPrecheck(filePath);
+                    const subDirStats = await this.directoryPathPrecheck(filePath); // Korrektur hier
                     fileCount += subDirStats.fileCount;
                     codeLineCount += subDirStats.codeLineCount;
                     // Hinzufügen der Dateipfade aus dem Unterverzeichnis
                     filePaths.push(...subDirStats.filePaths); // Verwendung des Spread-Operators
-                    // Alternativ: filePaths = filePaths.concat(subDirStats.filePaths);
                 } else {
                     fileCount++;
                     filePaths.push(filePath);
                     const fileContent = await fsPromises.readFile(filePath, 'utf-8');
-                    const lines = fileContent.split('\n').filter((line) => line.trim() !== ''); // Zähle nur nicht-leere Zeilen
+                    const lines = fileContent.split('\n'); // Zähle nur nicht-leere Zeilen
                     codeLineCount += lines.length;
                 }
             }
@@ -66,9 +65,9 @@ export class FileService {
             console.error('Fehler beim Vorabprüfen des Verzeichnisses:', err);
             throw err; // Fehler weiterwerfen
         }
-    }
+    };
 
-    async readFile(filePath: string) {
+    readFile = async (filePath: string) => {
         try {
             const fileContent = await fsPromises.readFile(filePath, 'utf-8'); // oder anderes Encoding
 
@@ -77,5 +76,29 @@ export class FileService {
             console.error('Fehler beim Lesen der Dateien:', err);
             throw err; // Fehler weiterwerfen
         }
-    }
+    };
+
+    // Gneriert von Gemini
+    saveMadLog = async (madLog: MADLog) => {
+        try {
+            const logsDir = path.join(process.cwd(), 'logs');
+            await fsPromises.mkdir(logsDir, { recursive: true });
+
+            // Generate a unique filename for the log file
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const logFileName = `madlog-${timestamp}.json`;
+            const logFilePath = path.join(logsDir, logFileName);
+
+            // Convert the MADLog object to a JSON string
+            const logData = JSON.stringify(madLog, null, 2); // Use null, 2 for pretty-printing
+
+            // Write the JSON string to the log file
+            await fsPromises.writeFile(logFilePath, logData, 'utf-8');
+
+            console.log(`MADLog saved to: ${logFilePath}`);
+        } catch (err) {
+            console.error('Error saving MADLog:', err);
+            throw err;
+        }
+    };
 }
