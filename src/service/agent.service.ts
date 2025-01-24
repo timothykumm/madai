@@ -12,7 +12,7 @@ export class AgentService {
     }
 
     askAgent = async (agent: Agent, code: string) => {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        //await new Promise((resolve) => setTimeout(resolve, 1000));
 
         switch (agent.model as string) {
             case 'GPT-4o':

@@ -54,25 +54,24 @@ export class MadController {
                     return res.status(500).send('Zip konnte nicht entpackt werden.');
                 }
 
-                const directoryPathPrecheck = await this.fileService.directoryPathPrecheck(directoryPath);
-                const timestamp = Date.now();
-                const madLogChunk: MADLogChunk[] = directoryPathPrecheck.filePaths.flatMap((filePath) => ({ filePath, discussion: [] }));
+                const directoryPathPrecheck = await this.fileService.directoryPathPrecheck(directoryPath); // Informationen zu Code-Datein-Anzahl und Code-Zeilen-Anzahl erhalten
+                const timestamp = Date.now(); // Timestamp für Log
+                const madLogChunk: MADLogChunk[] = directoryPathPrecheck.filePaths.flatMap((filePath) => ({ filePath, discussion: [] })); // Log vorbereiten indem alle Pfade bereits gesetzt werden
 
-                const fileStream: FileStream = new FileStream(directoryPathPrecheck);
-                let isLastText = false;
+                const fileStream: FileStream = new FileStream(directoryPathPrecheck); // Filestream starten
+                let isLastText = false; // letzte Datei bzw. code/text welches gelesen wurde (standardmäßig false)
 
                 fileStream.on('data', (encodedFileStreamResponse: BufferEncoding) => {
-                    fileStream.pause();
+                    fileStream.pause(); // Filestream pausieren nach abrufen einer Datei
 
-                    const fileStreamResponse: FileStreamResponse = JSON.parse(encodedFileStreamResponse.toString());
+                    const fileStreamResponse: FileStreamResponse = JSON.parse(encodedFileStreamResponse.toString()); // Filestream buffer in lesbares Objekt umwandeln
                     isLastText = fileStreamResponse.isLastText;
 
-                    const madStream: MadStream = new MadStream(configuration, fileStreamResponse);
+                    const madStream: MadStream = new MadStream(configuration, fileStreamResponse); // Madstream starten
 
                     madStream.on('data', (encodedExtendedAgentResponse: BufferEncoding) => {
-                        const extendedAgentResponse: ExtendedAgentResponse = JSON.parse(encodedExtendedAgentResponse.toString());
-
-                        const entryDiscussion = madLogChunk.find((chunk) => chunk.filePath === fileStreamResponse.path);
+                        const extendedAgentResponse: ExtendedAgentResponse = JSON.parse(encodedExtendedAgentResponse.toString()); // Madstream buffer in lesbares Objekt umwandeln
+                        const entryDiscussion = madLogChunk.find((chunk) => chunk.filePath === fileStreamResponse.path); // Logeintrag checken
 
                         if (entryDiscussion) {
                             const discussionRound = entryDiscussion.discussion.find((discussion) => discussion.round === extendedAgentResponse.round);
@@ -89,7 +88,7 @@ export class MadController {
                             console.error('Dateipfad existiert nicht in dem Log');
                         }
 
-                        res.write(`${encodedExtendedAgentResponse.toString()}`);
+                        res.write(`${encodedExtendedAgentResponse.toString()}`); // JSON Objekt an Client senden
                     });
 
                     madStream.on('end', () => {
@@ -103,8 +102,8 @@ export class MadController {
                                 configuration,
                                 madLogChunk,
                             };
-                            this.fileService.saveMadLog(madLog);
-                            res.status(StatusCodes.OK).end();
+                            this.fileService.saveMadLog(madLog); // Log speichern
+                            res.status(StatusCodes.OK).end(); // Status 200 an Client zurückgeben
                         }
                     });
 

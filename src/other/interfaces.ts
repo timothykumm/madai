@@ -16,7 +16,7 @@ export type Configuration = {
         google: string;
     };
     agents: Agent[];
-    keywords: string[];
+    task: string;
     rounds: number;
     dynamicRounds: boolean;
 };

@@ -30,10 +30,6 @@ export class MadService {
             return false;
         }
 
-        if (configuration.keywords.length > 2) {
-            console.warn('Mehr als 2 Kriterien sind wohmöglich subotimal');
-        }
-
         return true;
     };
 }

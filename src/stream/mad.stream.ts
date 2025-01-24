@@ -29,29 +29,28 @@ export class MadStream extends Readable {
         }
 
         const agent = this.configuration.agents[this.currentAgentIndex];
-        const keywords = this.configuration.keywords.join(',');
-        let prompt: string | undefined; // Standardmäßiger Prompt für den ersten Agenten in der ersten Runde
+        const task = this.configuration.task;
+        let prompt: string | undefined;
 
         if (this.currentAgentIndex === 0 && this.currentRound === 1) {
-            prompt = `Untersuche den dir vorliegenden Code ausschließlich auf die Aspekte [${keywords}]: "${this.fileStreamResponse.text}"`;
+            // Standardmäßiger Prompt für den ersten Agenten (Debattierer) in der ersten Runde
+            prompt = `Untersuche den Code: "${this.fileStreamResponse.text}"\n\n Deine Aufgabe ist ausschließlich: "${task}"`;
         } else if (agent.type === 'Debater') {
+            // Standardmäßiger Prompt für alle Debatterienden
             prompt = `Zu diesem Code:\n"${
                 this.fileStreamResponse.text
-            }"\n\n gibt es bereits ein Ergebnis von einem anderen Softwareentwickler, der die Aspekte [${keywords}] beurteilt hat:\n\n${this.saveResponses
-                .slice(-2)
+            }"\n\nhatte ein anderer Softwareentwickler ausschließlich die Aufgabe "${task}" und kam zu dem folgenden Ergebnis:\n\n${this.saveResponses
+                .slice(-1)
                 .join(
                     '\n\n'
-                )}\n\n1. Untersuche den dir vorliegenden Code ausschließlich auf folgende Aspekte [${keywords}]\n 2. Diskutier mit dem anderen Softwareentwickler, falls ihr euch bei etwas uneinig seid`;
+                )}\n\n1. Untersuche den vorliegenden Code und erfülle ausschließlich die Aufgabe "${task}"\n2. Diskutiere mit dem anderen Softwareentwickler, falls ihr euch bei etwas uneinig seid`;
         } else if (agent.type === 'Judge') {
-            if (this.saveResponses.length > 0) {
-                prompt = `Zu diesem Code:\n"${
-                    this.fileStreamResponse.text
-                }"\n\n gab es von anderen Softwareentwicklern die folgende Diskussion, welche die Aspekte [${keywords}] beurteilt haben:\n\n${this.saveResponses
-                    .slice(-2)
-                    .join(
-                        '\n\n'
-                    )}\n\n1. Überprüfe und entscheide welche Erkenntnisse korrekt sind. Beziehe dich ausschließlich auf die Aspekte [${keywords}]\n2. Fasse diese zusammen"`;
-            }
+            // Standardmäßiger Prompt für alle Richter
+            prompt = `Zu diesem Code:\n"${
+                this.fileStreamResponse.text
+            }"\n\n gab es von anderen Softwareentwicklern die folgenden Sichtweisen:\n\n${this.saveResponses
+                .slice(-2)
+                .join('\n\n')}\n\n1. Entscheide welche Erkenntnisse korrekt sind und Fasse diese zusammen"`;
         }
 
         if (!prompt) {
@@ -72,7 +71,7 @@ export class MadStream extends Readable {
         const outputBuffer = Buffer.from(JSON.stringify(extendedAgentResponse));
         this.push(outputBuffer);
 
-        // bei hoher Zuversicht die Debatte beenden
+        // bei hoher Zuversicht (confidence) die Debatte beenden
         if (agent.type === 'Judge' && this.configuration.dynamicRounds && agentResponse.confidence === 'HIGH') {
             return this.exit();
         }
@@ -81,6 +80,6 @@ export class MadStream extends Readable {
     }
 
     exit = () => {
-        this.push(null); // Ende des Streams
+        this.push(null); // Stream beenden
     };
 }

@@ -9,6 +9,7 @@ export class FileService {
 
     constructor() {}
 
+    // Funktion wurde von einem LLM geschrieben
     extractZip = async (file: Express.Multer.File) => {
         const uploadedFilePath = file.path;
         const extractionPath = path.join('uploads', path.parse(file.originalname).name);
@@ -33,6 +34,7 @@ export class FileService {
         }
     };
 
+    // Funktion wurde von einem LLM geschrieben
     directoryPathPrecheck = async (directoryPath: string): Promise<CodePrecheck> => {
         let fileCount = 0;
         let codeLineCount = 0;
@@ -67,18 +69,19 @@ export class FileService {
         }
     };
 
+    // Funktion wurde von einem LLM geschrieben
     readFile = async (filePath: string) => {
         try {
-            const fileContent = await fsPromises.readFile(filePath, 'utf-8'); // oder anderes Encoding
+            const fileContent = await fsPromises.readFile(filePath, 'utf-8');
 
             return fileContent;
         } catch (err) {
             console.error('Fehler beim Lesen der Dateien:', err);
-            throw err; // Fehler weiterwerfen
+            throw err;
         }
     };
 
-    // Gneriert von Gemini
+    // Funktion wurde von einem LLM geschrieben
     saveMadLog = async (madLog: MADLog) => {
         try {
             const logsDir = path.join(process.cwd(), 'logs');

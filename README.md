@@ -19,7 +19,7 @@ Below is an example of how to use the API endpoint to initiate a Multi-Agent Deb
 ```bash
 curl.exe -X POST http://localhost:3000/api/mad \
     -F "code=@C:\Users\xy\code.zip" \
-    -F "configuration={ \"apiKeys\": { \"google\": \"REPLACE\", \"openAi\": \"REPLACE\" }, \"agents\": [ { \"name\": \"AgentA\", \"model\": \"gemini-1.5-flash\", \"role\": \"assistant\", \"systemInstruction\": \"Du bist ein Experte in der Softwareentwicklung und wirst nacheinander Quellcode eines Projektes zugespielt bekommen, welchen du auf Kriterien untersuchst. Formatiere den Output als JSON wie folgt: { output: string, foundCriteriasCount: number, confidence: 'LOW' ^| 'MEDIUM' ^| 'HIGH' }.\", \"type\": \"Debater\" }, { \"name\": \"AgentB\", \"model\": \"gemini-1.5-flash\", \"role\": \"assistant\", \"systemInstruction\": \"Du bist ein Experte in der Softwareentwicklung und wirst nacheinander Quellcode eines Projektes zugespielt bekommen, welchen du auf Kriterien untersuchst. Formatiere den Output als JSON wie folgt: { output: string, foundCriteriasCount: number, confidence: 'LOW' ^| 'MEDIUM' ^| 'HIGH' }.\", \"type\": \"Debater\" }, { \"name\": \"AgentC\", \"model\": \"gemini-1.5-flash\", \"role\": \"assistant\", \"systemInstruction\": \"Du bist ein Experte in der Softwareentwicklung und wirst nacheinander Quellcode eines Projektes zugespielt bekommen, welchen du auf Kriterien untersuchst. Formatiere den Output als JSON wie folgt: { output: string, foundCriteriasCount: number, confidence: 'LOW' ^| 'MEDIUM' ^| 'HIGH' }.\", \"type\": \"Judge\" } ], \"rounds\": 3, \"dynamicRounds\": true, \"keywords\": [\"fairness\"] }" \
+    -F "configuration={ \"apiKeys\": { \"google\": \"REPLACE\", \"openAi\": \"REPLACE\" }, \"agents\": [ { \"name\": \"AgentA\", \"model\": \"gemini-1.5-flash\", \"role\": \"assistant\", \"systemInstruction\": \"Du bist ein Experte in der Softwareentwicklung und wirst nacheinander Quellcode eines Projektes zugespielt bekommen, welchen du auf Kriterien untersuchst. Formatiere den Output als JSON wie folgt: { output: string, foundCriteriasCount: number, confidence: 'LOW' ^| 'MEDIUM' ^| 'HIGH' }.\", \"type\": \"Debater\" }, { \"name\": \"AgentB\", \"model\": \"gemini-1.5-flash\", \"role\": \"assistant\", \"systemInstruction\": \"Du bist ein Experte in der Softwareentwicklung und wirst nacheinander Quellcode eines Projektes zugespielt bekommen, welchen du auf Kriterien untersuchst. Formatiere den Output als JSON wie folgt: { output: string, foundCriteriasCount: number, confidence: 'LOW' ^| 'MEDIUM' ^| 'HIGH' }.\", \"type\": \"Debater\" }, { \"name\": \"AgentC\", \"model\": \"gemini-1.5-flash\", \"role\": \"assistant\", \"systemInstruction\": \"Du bist ein Experte in der Softwareentwicklung und wirst nacheinander Quellcode eines Projektes zugespielt bekommen, welchen du auf Kriterien untersuchst. Formatiere den Output als JSON wie folgt: { output: string, foundCriteriasCount: number, confidence: 'LOW' ^| 'MEDIUM' ^| 'HIGH' }.\", \"type\": \"Judge\" } ], \"rounds\": 3, \"dynamicRounds\": true, \"task\": \"Untersuche den Code auf Fairness\" }" \
     --no-buffer
 ```
 
@@ -33,7 +33,7 @@ curl.exe -X POST http://localhost:3000/api/mad \
     - `agents`: Define agents with their roles, models, and instructions.
     - `rounds`: Specify the number of debate rounds.
     - `dynamicRounds`: If true, the debate will end earlier if the confidence is high.
-    - `keywords`: Add criteria for analysis (e.g., "fairness").
+    - `task`: Defines the task for the software engineers.
 
 ## Output Format
 
