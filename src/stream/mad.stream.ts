@@ -1,5 +1,5 @@
 import { Readable } from 'stream';
-import { AgentResponse, Configuration, ExtendedAgentResponse, FileStreamResponse } from '../other/interfaces';
+import { Agent, AgentResponse, Configuration, ExtendedAgentResponse, FileStreamResponse } from '../other/interfaces';
 import { AgentService } from '../service/agent.service';
 
 export class MadStream extends Readable {
@@ -10,16 +10,19 @@ export class MadStream extends Readable {
     private currentRound = 1;
     private currentAgentIndex = 0;
     private saveResponses: string[] = [];
+    private filteredAgents: Agent[] = [];
 
-    constructor(configuration: Configuration, fileStreamResponse: FileStreamResponse) {
+    constructor(agentService: AgentService, configuration: Configuration, fileStreamResponse: FileStreamResponse) {
         super();
-        this.agentService = new AgentService(configuration.apiKeys);
+        this.agentService = agentService;
         this.configuration = configuration;
         this.fileStreamResponse = fileStreamResponse;
+
+        this.filteredAgents = agentService.filterAndSortAgents(configuration.agents);
     }
 
     async _read() {
-        if (this.currentAgentIndex >= this.configuration.agents.length) {
+        if (this.currentAgentIndex >= this.filteredAgents.length) {
             this.currentAgentIndex = 0;
             this.currentRound++;
         }
@@ -28,29 +31,27 @@ export class MadStream extends Readable {
             return this.exit();
         }
 
-        const agent = this.configuration.agents[this.currentAgentIndex];
+        const agent = this.filteredAgents[this.currentAgentIndex];
         const task = this.configuration.task;
         let prompt: string | undefined;
 
         if (this.currentAgentIndex === 0 && this.currentRound === 1) {
             // Standardmäßiger Prompt für den ersten Agenten (Debattierer) in der ersten Runde
-            prompt = `Untersuche den Code: "${this.fileStreamResponse.text}"\n\n Deine Aufgabe ist ausschließlich: "${task}"`;
+            prompt = `Untersuche den Code: "${this.fileStreamResponse.text}". Deine Aufgabe ist ausschließlich: "${task}".`;
         } else if (agent.type === 'Debater') {
             // Standardmäßiger Prompt für alle Debatterienden
-            prompt = `Zu diesem Code:\n"${
+            prompt = `Zu diesem Code: "${
                 this.fileStreamResponse.text
-            }"\n\nhatte ein anderer Softwareentwickler ausschließlich die Aufgabe "${task}" und kam zu dem folgenden Ergebnis:\n\n${this.saveResponses
+            }" hatte ein anderer Softwareentwickler ausschließlich die Aufgabe "${task}" und kam zu dem folgenden Ergebnis: "${this.saveResponses
                 .slice(-1)
-                .join(
-                    '\n\n'
-                )}\n\n1. Untersuche den vorliegenden Code und erfülle ausschließlich die Aufgabe "${task}"\n2. Diskutiere mit dem anderen Softwareentwickler, falls ihr euch bei etwas uneinig seid`;
+                .join()}". 1. Untersuche den vorliegenden Code und erfülle ausschließlich die Aufgabe "${task}"\n2. Diskutiere mit dem anderen Softwareentwickler, falls ihr euch bei etwas uneinig seid`;
         } else if (agent.type === 'Judge') {
             // Standardmäßiger Prompt für alle Richter
-            prompt = `Zu diesem Code:\n"${
+            prompt = `Zu diesem Code: "${
                 this.fileStreamResponse.text
-            }"\n\n gab es von anderen Softwareentwicklern die folgenden Sichtweisen:\n\n${this.saveResponses
-                .slice(-2)
-                .join('\n\n')}\n\n1. Entscheide welche Erkenntnisse korrekt sind und Fasse diese zusammen"`;
+            }" gab es von anderen Softwareentwicklern die folgenden Sichtweisen: "${this.saveResponses.slice(-2).join('\n" und "\n')}". ${
+                this.configuration.judgePrompt
+            }."`;
         }
 
         if (!prompt) {

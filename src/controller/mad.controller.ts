@@ -6,6 +6,7 @@ import { FileService } from '../service/file.service';
 import { MadStream } from '../stream/mad.stream';
 import { FileStream } from '../stream/file.stream';
 import { MadService } from '../service/mad.service';
+import { AgentService } from '../service/agent.service';
 
 export class MadController {
     public path = '/mad';
@@ -13,6 +14,7 @@ export class MadController {
     public upload = multer({ dest: 'uploads/' }); // Temporäres Verzeichnis für Uploads
     public madService = new MadService();
     public fileService = new FileService();
+    public agentService: AgentService | undefined = undefined;
 
     constructor() {
         this.initializeRoutes();
@@ -58,16 +60,18 @@ export class MadController {
                 const timestamp = Date.now(); // Timestamp für Log
                 const madLogChunk: MADLogChunk[] = directoryPathPrecheck.filePaths.flatMap((filePath) => ({ filePath, discussion: [] })); // Log vorbereiten indem alle Pfade bereits gesetzt werden
 
+                this.agentService = new AgentService(configuration.apiKeys);
                 const fileStream: FileStream = new FileStream(directoryPathPrecheck); // Filestream starten
                 let isLastText = false; // letzte Datei bzw. code/text welches gelesen wurde (standardmäßig false)
 
                 fileStream.on('data', (encodedFileStreamResponse: BufferEncoding) => {
                     fileStream.pause(); // Filestream pausieren nach abrufen einer Datei
 
+                    if (!this.agentService) return res.status(500).send('Agent Service konnte nicht initialisiert werden.');
+
                     const fileStreamResponse: FileStreamResponse = JSON.parse(encodedFileStreamResponse.toString()); // Filestream buffer in lesbares Objekt umwandeln
                     isLastText = fileStreamResponse.isLastText;
-
-                    const madStream: MadStream = new MadStream(configuration, fileStreamResponse); // Madstream starten
+                    const madStream: MadStream = new MadStream(this.agentService, configuration, fileStreamResponse); // Madstream starten
 
                     madStream.on('data', (encodedExtendedAgentResponse: BufferEncoding) => {
                         const extendedAgentResponse: ExtendedAgentResponse = JSON.parse(encodedExtendedAgentResponse.toString()); // Madstream buffer in lesbares Objekt umwandeln
@@ -91,16 +95,29 @@ export class MadController {
                         res.write(`${encodedExtendedAgentResponse.toString()}`); // JSON Objekt an Client senden
                     });
 
-                    madStream.on('end', () => {
+                    madStream.on('end', async () => {
                         fileStream.resume();
 
                         if (isLastText) {
+                            const summarizerAgent = configuration.agents.find((agent) => agent.type === 'Summarizer');
+
+                            const prompt = `Das sind Ergebnisse verschiedener Code-Klassen: "${this.agentService
+                                ?.getLastAgentResponses(madLogChunk)
+                                .flatMap((response) => response.output)
+                                .join('"\n"')}". Deine Aufgabe ist: "${configuration.summarizerPrompt}"`;
+
+                            const summary =
+                                this.agentService && configuration.summarizeAllClasses && summarizerAgent
+                                    ? await this.agentService?.askAgent(summarizerAgent, prompt)
+                                    : null;
+
                             const madLog: MADLog = {
                                 timestamp,
                                 fileCount: directoryPathPrecheck.fileCount,
                                 codeLineCount: directoryPathPrecheck.codeLineCount,
                                 configuration,
                                 madLogChunk,
+                                summary,
                             };
                             this.fileService.saveMadLog(madLog); // Log speichern
                             res.status(StatusCodes.OK).end(); // Status 200 an Client zurückgeben

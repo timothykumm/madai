@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { Agent, AgentResponse } from '../other/interfaces';
+import { Agent, AgentResponse, MADLogChunk } from '../other/interfaces';
 
 export class AgentService {
     private openai: OpenAI;
@@ -11,9 +11,7 @@ export class AgentService {
         this.genAI = new GoogleGenerativeAI(apiKeys.google);
     }
 
-    askAgent = async (agent: Agent, code: string) => {
-        //await new Promise((resolve) => setTimeout(resolve, 1000));
-
+    askAgent = async (agent: Agent, prompt: string) => {
         switch (agent.model as string) {
             case 'GPT-4o':
             case 'GPT-4o-mini':
@@ -23,7 +21,7 @@ export class AgentService {
                         { role: agent.role, content: agent.systemInstruction },
                         {
                             role: 'user',
-                            content: code,
+                            content: prompt,
                         },
                     ],
                 });
@@ -32,12 +30,12 @@ export class AgentService {
 
             case 'gemini-exp-1206':
             case 'gemini-2.0-flash-exp':
+            case 'gemini-2.0-flash-thinking-exp-01-21':
             case 'gemini-1.5-flash':
                 const model = this.genAI.getGenerativeModel({
                     model: agent.model as string,
                     systemInstruction: { role: agent.role, parts: [{ text: agent.systemInstruction }] },
                 });
-                const prompt = code;
 
                 const result = await model.generateContent(prompt);
                 return result.response.text();
@@ -45,6 +43,29 @@ export class AgentService {
             default:
                 throw new Error(`Model ${agent.model} not supported`);
         }
+    };
+
+    getLastAgentResponses(logChunks: MADLogChunk[]): AgentResponse[] {
+        return logChunks
+            .map((chunk) => {
+                // Letzte Diskussion holen
+                const lastDiscussion = chunk.discussion.at(-1);
+                if (!lastDiscussion) {
+                    return null;
+                }
+
+                // Letzte AgentResponse aus der Diskussion holen
+                const lastAgentResponse = lastDiscussion.agentResponses.at(-1);
+                return lastAgentResponse || null;
+            })
+            .filter((response): response is AgentResponse => response !== null); // Null-Werte entfernen
+    }
+
+    filterAndSortAgents = (agents: Agent[]) => {
+        const debater = agents.filter((agent) => agent.type === 'Debater');
+        const judge = agents.filter((agent) => agent.type === 'Judge');
+
+        return [...debater, ...judge];
     };
 
     responseToObject = (agentName: string, output: string): AgentResponse => {

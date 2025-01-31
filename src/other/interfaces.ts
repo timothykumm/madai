@@ -4,7 +4,7 @@ type SuportedModels = OpenAiModels | GeminiModels;
 
 export type Agent = {
     name: string;
-    type: 'Debater' | 'Judge';
+    type: 'Debater' | 'Judge' | 'Summarizer';
     model: SuportedModels;
     role: 'assistant' | 'developer' | 'user';
     systemInstruction: string;
@@ -19,6 +19,9 @@ export type Configuration = {
     task: string;
     rounds: number;
     dynamicRounds: boolean;
+    judgePrompt: string;
+    summarizeAllClasses: boolean;
+    summarizerPrompt: string;
 };
 
 export type AgentResponse = {
@@ -49,6 +52,7 @@ export type MADLog = {
     codeLineCount: number;
     configuration: Omit<Configuration, 'apiKeys'>;
     madLogChunk: MADLogChunk[];
+    summary: string | null;
 };
 
 export type CodePrecheck = {
