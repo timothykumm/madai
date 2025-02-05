@@ -24,6 +24,20 @@ export class MadController {
         this.router.post(this.path, this.startMad);
     }
 
+    /**
+     * Startet des MAD-Prozesses. Diese Methode ist verantwortlich für die Handhabung der Anfrage zum Start des MAD-Prozesses,
+     * einschließlich des Hochladens einer Datei, der Validierung der Konfiguration, des Extrahierens der hochgeladenen Datei und der
+     * Verarbeitung der Datei durch verschiedene Dienste.
+     *
+     * @param req - Das Anforderungsobjekt.
+     * @param res - Das Antwortobjekt.
+     * @param next - Die nächste Middleware-Funktion.
+     *
+     * @returns Eine Promise, die aufgelöst wird, wenn der MAD-Prozess abgeschlossen ist.
+     *
+     * @throws Wirft einen Fehler, wenn die Konfiguration ungültig ist, keine Datei hochgeladen wird, die Datei zu groß ist oder
+     *         wenn es während der Datei-Extraktion oder -Verarbeitung zu Problemen kommt.
+     */
     private startMad = async (req: Request, res: Response, next: NextFunction) => {
         try {
             res.setHeader('Content-Type', 'text/plain');

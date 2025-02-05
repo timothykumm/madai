@@ -10,6 +10,21 @@ export type Agent = {
     systemInstruction: string;
 };
 
+/**
+ * Konfigurationsobjekt für die Anwendung.
+ *
+ * @typedef {Object} Configuration
+ * @property {Object} apiKeys - API-Schlüssel für verschiedene Dienste.
+ * @property {string} apiKeys.openAi - API-Schlüssel für OpenAI.
+ * @property {string} apiKeys.google - API-Schlüssel für Google.
+ * @property {Agent[]} agents - Liste der Agenten.
+ * @property {string} task - Aufgabe, die ausgeführt werden soll.
+ * @property {number} rounds - Anzahl der Runden.
+ * @property {boolean} dynamicRounds - Gibt an, ob die Runden dynamisch sind.
+ * @property {string} judgePrompt - Eingabeaufforderung für den Richter.
+ * @property {boolean} summarizeAllClasses - Gibt an, ob alle Klassen zusammengefasst werden sollen.
+ * @property {string} summarizerPrompt - Eingabeaufforderung für den Zusammenfasser.
+ */
 export type Configuration = {
     apiKeys: {
         openAi: string;

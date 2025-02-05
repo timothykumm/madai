@@ -13,9 +13,17 @@ export class FileStream extends Readable {
         this.codePrecheck = codePrecheck;
     }
 
+    /**
+     * Liest asynchron die nächste Datei in der Sequenz und schiebt deren Inhalt als Puffer.
+     * Wenn alle Dateien gelesen wurden, wird `null` geschoben, um das Ende des Streams zu signalisieren.
+     *
+     * @returns {Promise<void>} Ein Versprechen, das aufgelöst wird, wenn der Lesevorgang abgeschlossen ist.
+     *
+     * @private
+     */
     async _read() {
         if (this.currentFileIndex >= this.codePrecheck.fileCount) {
-            this.push(null); // Ende des Streams
+            this.push(null);
             return;
         }
 

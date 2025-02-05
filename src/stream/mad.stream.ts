@@ -21,6 +21,20 @@ export class MadStream extends Readable {
         this.filteredAgents = agentService.filterAndSortAgents(configuration.agents);
     }
 
+    /**
+     * Liest und verarbeitet asynchron die nächste Aufgabe des Agenten in der Debattenrunde.
+     *
+     * Diese Methode behandelt Folgendes:
+     * - Setzt den Agentenindex zurück und erhöht die Runde, wenn alle Agenten verarbeitet wurden.
+     * - Beendet die Debatte, wenn die maximale Anzahl an Runden überschritten wird.
+     * - Erstellt einen Prompt basierend auf dem Agententyp und der aktuellen Runde.
+     * - Sendet den Prompt an den Agentendienst und wartet auf eine Antwort.
+     * - Speichert die Antwort des Agenten und schiebt sie in den Ausgabepuffer.
+     * - Beendet die Debatte frühzeitig, wenn ein Richter-Agent hohe Zuversicht hat und dynamische Runden aktiviert sind.
+     *
+     * @returns {Promise<void>} Ein Promise, das aufgelöst wird, wenn der Lesevorgang abgeschlossen ist.
+     * @throws Loggt einen Fehler und beendet die Debatte, wenn der Prompt undefiniert ist.
+     */
     async _read() {
         if (this.currentAgentIndex >= this.filteredAgents.length) {
             this.currentAgentIndex = 0;
